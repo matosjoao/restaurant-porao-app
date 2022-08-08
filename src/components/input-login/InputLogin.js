@@ -4,7 +4,13 @@ import Icon from 'react-native-vector-icons/dist/Ionicons';
 
 import {LOGIN_DIMENSIONS} from '../../Config';
 
-function InputLogin({iconName, iconColor, textInputStyles, textInputConfig}) {
+function InputLogin({
+  iconName,
+  iconColor,
+  textInputStyles,
+  textInputConfig,
+  textInputValid,
+}) {
   return (
     <View style={styles.container}>
       <Icon name={iconName} color={iconColor} size={28} style={styles.icon} />

@@ -1,10 +1,31 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {View, Image, ImageBackground, StyleSheet} from 'react-native';
+import {login} from '../api/AuthService';
+import {Alert} from '../common/services/Alert';
 
+import Loading from '../common/services/Loading';
 import FormLogin from '../components/form-login/FormLogin';
 import {COLORS} from '../Config';
+import {AuthContext} from '../store/auth-context';
 
 function Login() {
+  const authCtx = useContext(AuthContext);
+
+  async function onAuthenticateHandler({email, password}) {
+    Loading.start();
+    try {
+      const token = await login(email, password);
+      authCtx.authenticate(token);
+      Loading.stop();
+    } catch (error) {
+      Alert.error(
+        'Autenticação falhou!',
+        'Por favor, verifique os seus dados ou tente mais tarde.',
+      );
+      Loading.stop();
+    }
+  }
+
   return (
     <View style={styles.rootContainer}>
       <View style={styles.logoContainer}>
@@ -19,7 +40,7 @@ function Login() {
           source={require('../../assets/images/back-login.png')}
           resizeMode="cover"
           style={styles.formBackground}>
-          <FormLogin />
+          <FormLogin onAuthenticate={onAuthenticateHandler} />
         </ImageBackground>
       </View>
     </View>

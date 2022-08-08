@@ -27,6 +27,17 @@ export const LOGIN_DIMENSIONS = {
 };
 
 /**
+ * Storage
+ */
+export const STORAGE_KEY = 'rwKc:8)%8cPubxjADUK$Cfk~dN]b&YLk';
+export const STORAGE_NAMES = {
+  TOKEN: 'APP:TOKEN',
+  PROFILE: 'APP:PROFILE',
+  LAST_LOGGED_USER_ID: 'APP:LAST_LOGGED_USER_ID',
+  CURRENT_LOCALE: 'APP:CURRENT_LOCALE',
+};
+
+/**
  * Order Screen Dimensions
  */
 export const ORDER_DIMENSIONS = {

@@ -1,13 +1,50 @@
-import React from 'react';
-import {useNavigation} from '@react-navigation/native';
+import React, {useState} from 'react';
 
+import {Alert} from '../../common/services/Alert';
 import {COLORS} from '../../Config';
 import ButtonLogin from '../button-login/ButtonLogin';
 import InputLogin from '../input-login/InputLogin';
 import TitleLogin from '../title-login/TitleLogin';
 
-function FormLogin() {
-  const navigation = useNavigation();
+function FormLogin({onAuthenticate}) {
+  const [credentialsInvalid, setCredentialsInvalid] = useState({
+    email: false,
+    password: false,
+  });
+  const [enteredEmail, setEnteredEmail] = useState('');
+  const [enteredPassword, setEnteredPassword] = useState('');
+
+  function updateInputValueHandler(inputType, enteredValue) {
+    switch (inputType) {
+      case 'email':
+        setEnteredEmail(enteredValue);
+        break;
+      case 'password':
+        setEnteredPassword(enteredValue);
+        break;
+    }
+  }
+
+  function submitHandler() {
+    let email = enteredEmail.trim();
+    let password = enteredPassword.trim();
+
+    const emailIsValid = email.includes('@');
+    const passwordIsValid = password.length > 1;
+
+    if (!emailIsValid || !passwordIsValid) {
+      Alert.warn(
+        'Dados inválidos',
+        'Por favor, introduza um email válido e uma palavra-passe.',
+      );
+      setCredentialsInvalid({
+        email: !emailIsValid,
+        password: !passwordIsValid,
+      });
+      return;
+    }
+    onAuthenticate({email, password});
+  }
 
   return (
     <>
@@ -21,9 +58,10 @@ function FormLogin() {
           placeholder: 'Utilizador',
           autoCorrect: true,
           autoCapitalize: 'none',
-          onChangeText: () => {},
-          /* value: inputs.description.value, */
+          onChangeText: updateInputValueHandler.bind(this, 'email'),
+          value: enteredEmail,
         }}
+        textInputValid={credentialsInvalid.email}
       />
 
       <InputLogin
@@ -35,20 +73,13 @@ function FormLogin() {
           autoCorrect: true,
           autoCapitalize: 'none',
           secureTextEntry: true,
-          onChangeText: () => {},
-          /* value: inputs.description.value, */
+          onChangeText: updateInputValueHandler.bind(this, 'password'),
+          value: enteredPassword,
         }}
+        textInputValid={credentialsInvalid.password}
       />
 
-      <ButtonLogin
-        onPress={() => {
-          navigation.reset({
-            index: 0,
-            routes: [{name: 'Rooms'}],
-          });
-        }}>
-        ENTRAR
-      </ButtonLogin>
+      <ButtonLogin onPress={submitHandler}>ENTRAR</ButtonLogin>
     </>
   );
 }

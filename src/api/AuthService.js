@@ -1,17 +1,13 @@
-import axios from 'axios';
-
-const API_KEY = 'AIzaSyA71PIChWuZ8AlUk6HevcfaUwelaUmpGHQ';
+import Http from '../common/services/Http';
 
 export async function login(email, password) {
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`;
-
-  const response = await axios.post(url, {
+  return await Http.post('login', {
     email: email,
     password: password,
-    returnSecureToken: true,
+    device_name: 'teste',
   });
+}
 
-  const token = response.data.idToken;
-
-  return token;
+export async function logout() {
+  return await Http.post('logout');
 }

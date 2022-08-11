@@ -1,10 +1,11 @@
 import React, {createContext, useState} from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {STORAGE_NAMES} from '../Config';
+import {API_TOKEN_TYPE, STORAGE_NAMES} from '../Config';
+import Http from '../common/services/Http';
 
 export const AuthContext = createContext({
-  toke: '',
+  token: '',
   isAuthenticated: false,
   authenticate: () => {},
   logout: () => {},
@@ -16,6 +17,11 @@ function AuthContextProvider({children}) {
   function authenticate(token) {
     setAuthToken(token);
     setToken(token);
+    console.log(token)
+    Http.setToken({
+      token_type: API_TOKEN_TYPE,
+      access_token: token,
+    });
   }
 
   function logout() {

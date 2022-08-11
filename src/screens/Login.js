@@ -14,13 +14,14 @@ function Login() {
   async function onAuthenticateHandler({email, password}) {
     Loading.start();
     try {
-      const token = await login(email, password);
-      authCtx.authenticate(token);
+      const response = await login(email, password);
+      authCtx.authenticate(response.token);
       Loading.stop();
     } catch (error) {
       Alert.error(
         'Autenticação falhou!',
-        'Por favor, verifique os seus dados ou tente mais tarde.',
+        'Por favor, verifique os seus dados ou tente mais tarde.\n' +
+          error.response?.data?.message,
       );
       Loading.stop();
     }

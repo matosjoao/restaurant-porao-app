@@ -34,7 +34,7 @@ export default StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   title: {
     fontFamily: 'Roboto-Light',
@@ -43,7 +43,10 @@ export default StyleSheet.create({
     marginBottom: 10,
   },
   buttonContainer: {
-    height: 80,
+    height: 60,
     justifyContent: 'center',
+  },
+  listContainer: {
+    flex: 1,
   },
 });

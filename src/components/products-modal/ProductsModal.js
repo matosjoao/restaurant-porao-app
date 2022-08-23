@@ -1,131 +1,195 @@
-import React, {useEffect, useState} from 'react';
-import {View, Dimensions, Modal, Text, Animated, Pressable} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+/* eslint-env browser */
+/* eslint no-undef: "error"*/
+import React, {useRef, useEffect, useState, useCallback} from 'react';
+import {Text, View, findNodeHandle} from 'react-native';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import axios from 'axios';
 
-import {COLORS, PRODUCTS_DATA} from '../../Config';
-import Button from '../button/Button';
+import {getCategories} from '../../api/CategoriesService';
+import {getProducts} from '../../api/ProductsService';
+import {Alert} from '../../common/services/Alert';
+import Loading from '../../common/services/Loading';
 import CategoriesSlider from '../categories-slider/CategoriesSlider';
 import ProductsSlider from '../products-slider/ProductsSlider';
+import SearchInput from '../search-input/SearchInput';
 import styles from './ProductsModal.style';
+import ProductsModalContainer from './ProductsModalContainer';
 
-function ProductsModal({isVisible, onCloseModal, onAdd}) {
-  const [currentCategory, setCurrentCategory] = useState(-1);
-  const [productsList, setProductsList] = useState(PRODUCTS_DATA);
+function ProductsModal({isVisible, onCloseModal, onAddProducts}) {
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const [enteredSearch, setEnteredSearch] = useState('');
+  const [productsList, setProductsList] = useState([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const [categoriesList, setCategoriesList] = useState([]);
   const [productsToAdd, setProductsToAdd] = useState([]);
-
-  const screenHeight = Dimensions.get('screen').height;
-
-  const [panY, setPanY] = useState(new Animated.Value(screenHeight));
-  const [spinValue, setSpinValue] = useState(new Animated.Value(0));
-
-  const resetPositionAnim = Animated.timing(panY, {
-    toValue: 0,
-    duration: 300,
-    useNativeDriver: false,
-  });
-
-  const closeAnim = Animated.timing(panY, {
-    toValue: screenHeight,
-    duration: 300,
-    useNativeDriver: false,
-  });
-
-  const top = panY.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [0, 0, 1],
-  });
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
+  const scrollRef = useRef();
+  const searchInput = useRef();
 
   useEffect(() => {
-    if (isVisible) {
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
+    const controller = new AbortController();
 
-      resetPositionAnim.start();
+    async function fetchData() {
+      Loading.start();
+      setIsFetching(true);
+      try {
+        const responseCategories = await getCategories({
+          signal: controller.signal,
+        });
+        setCategoriesList(responseCategories.products_types);
+
+        const responseProducts = await getProducts({
+          signal: controller.signal,
+        });
+        setProductsList(responseProducts.products);
+
+        setIsFetching(false);
+        Loading.stop();
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          Alert.error(
+            'Ocorreu um erro',
+            'Por favor contacte o administrador.\n' +
+              '[' +
+              error.response?.data?.message +
+              ']',
+          );
+        }
+        setIsFetching(false);
+        Loading.stop();
+      }
     }
-  }, [isVisible, resetPositionAnim, spinValue]);
 
-  const closeModal = () => {
-    closeAnim.start(() => {
-      setPanY(new Animated.Value(screenHeight));
-      setSpinValue(new Animated.Value(0));
-      onCloseModal();
+    fetchData();
+
+    return () => {
+      // If the component is unmounted, cancel the request
+      controller.abort();
+    };
+  }, []);
+
+  // On Category press filter
+  const onCategoryPressHandler = useCallback(
+    async categoryId => {
+      const controller = new AbortController();
+
+      if (categoryId === currentCategory) {
+        const responseProducts = await getProducts(null, null, {
+          signal: controller.signal,
+        });
+        setProductsList(responseProducts.products);
+        setCurrentCategory(null);
+      } else {
+        const responseProducts = await getProducts(categoryId, enteredSearch, {
+          signal: controller.signal,
+        });
+        setProductsList(responseProducts.products);
+        setCurrentCategory(categoryId);
+      }
+
+      return () => {
+        // If the component is unmounted, cancel the request
+        controller.abort();
+      };
+    },
+    [currentCategory, enteredSearch],
+  );
+
+  const onSearchSubmitHandler = useCallback(async () => {
+    const controller = new AbortController();
+
+    const responseProducts = await getProducts(currentCategory, enteredSearch, {
+      signal: controller.signal,
     });
-  };
+    setProductsList(responseProducts.products);
 
-  function onCategoryPressHandler(categoryId) {
-    if (categoryId === currentCategory) {
-      setProductsList(PRODUCTS_DATA);
-    } else {
-      setCurrentCategory(categoryId);
-      let filteredProductList = PRODUCTS_DATA.filter(product => {
-        return product.categoryId === categoryId;
-      });
-      setProductsList(filteredProductList);
-    }
-  }
+    return () => {
+      // If the component is unmounted, cancel the request
+      controller.abort();
+    };
+  }, [currentCategory, enteredSearch]);
 
+  // On Update list: quantities
   function onProductListUpdateHandler(list) {
     setProductsToAdd(list);
   }
 
+  // Add Products to Order List
   function onAddPressHandler() {
-    // Add name and price to array
-    productsToAdd.map(productToAdd => {
-      const productDetail = PRODUCTS_DATA.find(
-        product => product.id === productToAdd.productId,
-      );
-      productToAdd.price = productDetail.price;
-      productToAdd.description = productDetail.description;
-      productToAdd.toSave = 1;
-    });
-
-    closeAnim.start(() => {
-      setPanY(new Animated.Value(screenHeight));
-      setSpinValue(new Animated.Value(0));
-      onAdd(productsToAdd);
-    });
+    onAddProducts(productsToAdd);
   }
 
+  /* const scrollToInput = reactNode => {
+    scrollRef.current.scrollToFocusedInput(reactNode);
+  };
+
+  const onInputFocus = event => {
+    console.log(findNodeHandle(event.target));
+    scrollToInput(findNodeHandle(event.target));
+  }; */
+
   return (
-    <Modal transparent={true} visible={isVisible} animationType="fade">
-      <View style={styles.container}>
-        <Animated.View style={[styles.modalContainer, {top}]}>
-          <Pressable onPress={closeModal} style={styles.closeButton}>
-            <Animated.View style={{transform: [{rotate: spin}]}}>
-              <Icon name={'md-close-circle'} color={COLORS.gray} size={50} />
-            </Animated.View>
-          </Pressable>
-          <View style={styles.content}>
-            <Text style={styles.title}>Categorias:</Text>
-            <CategoriesSlider onItemPress={onCategoryPressHandler} />
-
-            <Text style={styles.title}>Produtos:</Text>
-            <ProductsSlider
-              productsList={productsList}
-              onProductListUpdate={onProductListUpdateHandler}
+    <ProductsModalContainer
+      isVisible={isVisible}
+      onCloseModal={onCloseModal}
+      onAddPress={onAddPressHandler}>
+      <View style={styles.listContainer}>
+        {/* <View style={{height: 80}}>
+          <KeyboardAwareScrollView
+            contentContainerStyle={{flex: 1}}
+            extraScrollHeight={120}
+            enableOnAndroid={true}
+            ref={scrollRef}
+            enableResetScrollToCoords={false}
+            bounces={false}
+            contentInsetAdjustmentBehavior="always"
+            overScrollMode="always"
+            showsVerticalScrollIndicator={true}>
+            <SearchInput
+              iconName="search"
+              textInputConfig={{
+                ref: searchInput,
+                placeholder: 'Procure por um produto...',
+                autoCorrect: false,
+                autoCapitalize: 'none',
+                onChangeText: value => setEnteredSearch(value),
+                value: enteredSearch,
+                returnKeyType: 'search',
+                onSubmitEditing: onSearchSubmitHandler,
+                onFocus: onInputFocus,
+              }}
             />
+          </KeyboardAwareScrollView>
+        </View> */}
 
-            <View style={styles.buttonContainer}>
-              <Button
-                onPress={onAddPressHandler}
-                text="ADICIONAR"
-                size="normal"
-                iconName="add-sharp"
-                position="normal"
-              />
-            </View>
-          </View>
-        </Animated.View>
+        <Text style={styles.title}>Categorias:</Text>
+        <CategoriesSlider
+          categories={categoriesList}
+          onItemPress={onCategoryPressHandler}
+          currentCategory={currentCategory}
+        />
+
+        <Text style={styles.title}>Produtos:</Text>
+        <ProductsSlider
+          productsList={productsList}
+          onProductListUpdate={onProductListUpdateHandler}
+          isFetching={isFetching}
+        />
+
+        {/* TODO:: Add keyboard avoind view */}
+        <SearchInput
+          iconName="search"
+          textInputConfig={{
+            placeholder: 'Procure por um produto...',
+            autoCorrect: false,
+            autoCapitalize: 'none',
+            onChangeText: value => setEnteredSearch(value),
+            value: enteredSearch,
+            returnKeyType: 'search',
+            onSubmitEditing: onSearchSubmitHandler,
+          }}
+        />
       </View>
-    </Modal>
+    </ProductsModalContainer>
   );
 }
 

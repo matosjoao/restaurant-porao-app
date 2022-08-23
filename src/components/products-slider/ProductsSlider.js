@@ -1,9 +1,16 @@
 import React, {useState, useLayoutEffect} from 'react';
-import {View, FlatList, StyleSheet} from 'react-native';
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+} from 'react-native';
+import {COLORS} from '../../Config';
 
 import ProductItem from './ProductItem';
 
-function ProductsSlider({productsList, onProductListUpdate}) {
+function ProductsSlider({productsList, onProductListUpdate, isFetching}) {
   const [productsToAdd, setProductsToAdd] = useState([]);
 
   useLayoutEffect(() => {
@@ -11,9 +18,9 @@ function ProductsSlider({productsList, onProductListUpdate}) {
     onProductListUpdate(productsToAdd);
   }, [productsToAdd, onProductListUpdate]);
 
-  function onProductPressHandler(productId, action) {
+  function onProductPressHandler(pressedProduct, action) {
     const updatableProductIndex = productsToAdd.findIndex(
-      product => product.productId === productId,
+      product => product.id === pressedProduct.id,
     );
     // Add first time
     if (updatableProductIndex === -1) {
@@ -22,7 +29,7 @@ function ProductsSlider({productsList, onProductListUpdate}) {
       }
       setProductsToAdd(current => [
         ...current,
-        {productId: productId, quantity: 1},
+        {...pressedProduct, quantity: 1},
       ]);
 
       // Update quantity existing product
@@ -39,7 +46,7 @@ function ProductsSlider({productsList, onProductListUpdate}) {
 
         setProductsToAdd(current =>
           current.filter(obj => {
-            return obj.productId !== productId;
+            return obj.productId !== pressedProduct.id;
           }),
         );
       } else {
@@ -57,7 +64,7 @@ function ProductsSlider({productsList, onProductListUpdate}) {
 
   function renderProduct(itemData) {
     const updatableProductIndex = productsToAdd.findIndex(
-      product => product.productId === itemData.item.id,
+      product => product.id === itemData.item.id,
     );
     const quantity =
       updatableProductIndex !== -1
@@ -68,23 +75,36 @@ function ProductsSlider({productsList, onProductListUpdate}) {
       <ProductItem
         {...itemData.item}
         quantity={quantity}
-        onPressAdd={id => {
-          onProductPressHandler(id, 'add');
+        onPressAdd={product => {
+          onProductPressHandler(product, 'add');
         }}
-        onPressRemove={id => {
-          onProductPressHandler(id, 'remove');
+        onPressRemove={product => {
+          onProductPressHandler(product, 'remove');
         }}
       />
     );
   }
 
+  function renderEmptyList() {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.text}>Sem produtos</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.productsContainer}>
-      <FlatList
-        keyExtractor={item => item.id.toString()}
-        data={productsList}
-        renderItem={renderProduct}
-      />
+      {!isFetching && productsList ? (
+        <FlatList
+          keyExtractor={item => item.id.toString()}
+          data={productsList}
+          renderItem={renderProduct}
+          ListEmptyComponent={renderEmptyList}
+        />
+      ) : (
+        <ActivityIndicator animating size="large" color={COLORS.primary} />
+      )}
     </View>
   );
 }
@@ -95,5 +115,13 @@ const styles = StyleSheet.create({
   productsContainer: {
     flex: 1,
     marginBottom: 10,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+  },
+  text: {
+    fontFamily: 'Roboto-Light',
+    fontSize: 14,
+    paddingVertical: 10,
   },
 });

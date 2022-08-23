@@ -6,6 +6,7 @@ import LoadingProvider from './common/layout/loading/LoadingProvider';
 import ErrorBoundary from './common/layout/error-boundary/ErrorBoundary';
 import Router from './Router';
 import AuthContextProvider from './store/auth-context';
+import ProductsContextProvider from './store/products-context';
 
 function App() {
   return (
@@ -14,7 +15,9 @@ function App() {
       <AuthContextProvider>
         <AlertWrapper>
           <LoadingProvider>
-            <Router />
+            <ProductsContextProvider>
+              <Router />
+            </ProductsContextProvider>
           </LoadingProvider>
         </AlertWrapper>
       </AuthContextProvider>

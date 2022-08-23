@@ -1,20 +1,19 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 import RoomsScreen from './screens/RoomsScreen';
-import Tables from './screens/Tables';
-import Order from './screens/Order';
-import Login from './screens/Login';
-import SettingsScreen from './screens/SettingsScreen';
+import TablesScreen from './screens/TablesScreen';
+import OrderScreen from './screens/OrderScreen';
+import LoginScreen from './screens/LoginScreen';
+import SplashScreen from './screens/SplashScreen';
 import {COLORS} from './Config';
 import IconButton from './components/icon-button/IconButton';
-import {AuthContext, getToken} from './store/auth-context';
+import {AuthContext} from './store/auth-context';
+import {getToken} from './common/services/Storage';
+import {TestStack} from './screens/TestScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
 
 const HEADER_STYLE = {
   headerStyle: {
@@ -54,7 +53,7 @@ function AuthenticatedStack() {
       />
       <Stack.Screen
         name="Tables"
-        component={Tables}
+        component={TablesScreen}
         options={({navigation}) => ({
           title: 'MESAS',
           headerLeft: () => <HeaderArrowLeft onPress={navigation.goBack} />,
@@ -62,7 +61,7 @@ function AuthenticatedStack() {
       />
       <Stack.Screen
         name="Order"
-        component={Order}
+        component={OrderScreen}
         options={({navigation}) => ({
           title: 'PEDIDO',
           headerLeft: () => <HeaderArrowLeft onPress={navigation.goBack} />,
@@ -82,82 +81,44 @@ function AuthStack() {
       screenOptions={{
         headerShown: false,
       }}>
-      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Login" component={LoginScreen} />
     </Stack.Navigator>
-  );
-}
-
-/**
- * Main Navigation
- * With bottom tabs
- */
-function BottomTabsNavigation() {
-  return (
-    <Tab.Navigator
-      screenOptions={{
-        ...HEADER_STYLE,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.gray,
-        tabBarStyle: {
-          height: 60,
-          borderTopColor: COLORS.gray,
-          borderTopWidth: 1,
-          borderLeftColor: COLORS.gray,
-          borderLeftWidth: 1,
-          borderRightColor: COLORS.gray,
-          borderRightWidth: 1,
-          marginHorizontal: -10,
-          borderTopLeftRadius: 40,
-          borderTopRightRadius: 40,
-        },
-      }}>
-      <Tab.Screen
-        name="Home"
-        component={AuthenticatedStack}
-        options={{
-          headerShown: false,
-          title: 'Início',
-          tabBarIcon: ({focused, color, size}) => {
-            return <Icon name="home-outline" size={size} color={color} />;
-          },
-          tabBarShowLabel: false,
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          title: 'CONTA',
-          tabBarIcon: ({focused, color, size}) => {
-            return <Icon name="settings-outline" size={size} color={color} />;
-          },
-          tabBarShowLabel: false,
-        }}
-      />
-    </Tab.Navigator>
   );
 }
 
 function Router() {
   const authCtx = useContext(AuthContext);
-
-  //TODO:: Colocar AppLoading - para mostrar o splashscreen enquanto vai buscar o token
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function fetchToken() {
       const storedToken = await getToken();
-      if (storedToken) {
+      if (storedToken && !isCancelled) {
         authCtx.authenticate(storedToken);
       }
+      setIsLoading(false);
     }
 
     fetchToken();
-  }, [authCtx]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   return (
     <NavigationContainer>
-      {!authCtx.isAuthenticated && <AuthStack />}
-      {authCtx.isAuthenticated && <AuthenticatedStack />}
+      {isLoading ? (
+        <SplashScreen />
+      ) : (
+        <>
+          <TestStack />
+          {/* {!authCtx.isAuthenticated && <AuthStack />}
+          {authCtx.isAuthenticated && <AuthenticatedStack />} */}
+        </>
+      )}
     </NavigationContainer>
   );
 }

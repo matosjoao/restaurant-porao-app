@@ -1,22 +1,15 @@
-import React from 'react';
+import React, {memo} from 'react';
 import {View, Text} from 'react-native';
 
 import {COLORS} from '../../Config';
 import IconButton from '../icon-button/IconButton';
 import styles from './ProductItem.style';
 
-function ProductItem({
-  id,
-  description,
-  price,
-  quantity,
-  onPressAdd,
-  onPressRemove,
-}) {
+function ProductItem({id, name, price, quantity, onPressAdd, onPressRemove}) {
   return (
     <View style={styles.container}>
       <View style={styles.infoContainer}>
-        <Text style={styles.itemName}>{description}</Text>
+        <Text style={styles.itemName}>{name}</Text>
         <Text style={styles.itemPrice}>{price}€</Text>
       </View>
       <View style={styles.actionsContainer}>
@@ -26,7 +19,7 @@ function ProductItem({
           size={40}
           buttonStyle={styles.icon}
           onPress={() => {
-            onPressAdd(id);
+            onPressAdd({id, name, price});
           }}
         />
         <Text style={styles.quantity}>{quantity}</Text>
@@ -36,7 +29,7 @@ function ProductItem({
           size={40}
           buttonStyle={styles.icon}
           onPress={() => {
-            onPressRemove(id);
+            onPressRemove({id, name, price});
           }}
         />
       </View>
@@ -44,4 +37,4 @@ function ProductItem({
   );
 }
 
-export default ProductItem;
+export default memo(ProductItem);

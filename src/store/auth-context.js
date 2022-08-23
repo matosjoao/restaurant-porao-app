@@ -1,8 +1,8 @@
 import React, {createContext, useState} from 'react';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {API_TOKEN_TYPE, STORAGE_NAMES} from '../Config';
 import Http from '../common/services/Http';
+import {removeToken, setToken} from '../common/services/Storage';
+import {API_TOKEN_TYPE} from '../Config';
 
 export const AuthContext = createContext({
   token: '',
@@ -15,9 +15,14 @@ function AuthContextProvider({children}) {
   const [authToken, setAuthToken] = useState();
 
   function authenticate(token) {
+    // Set token to State
     setAuthToken(token);
+
+    // Save token in storage
     setToken(token);
-    console.log(token)
+
+    // Set token in Http Class
+    //TODO:: Improve maybe
     Http.setToken({
       token_type: API_TOKEN_TYPE,
       access_token: token,
@@ -25,7 +30,10 @@ function AuthContextProvider({children}) {
   }
 
   function logout() {
+    // Set token to State null
     setAuthToken(null);
+
+    // Remove token from storage
     removeToken();
   }
 
@@ -38,30 +46,5 @@ function AuthContextProvider({children}) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export const getToken = async () => {
-  try {
-    const tokenString = await AsyncStorage.getItem(STORAGE_NAMES.TOKEN);
-    return tokenString;
-  } catch (e) {
-    return null;
-  }
-};
-
-const setToken = async token => {
-  try {
-    await AsyncStorage.setItem(STORAGE_NAMES.TOKEN, token);
-  } catch (e) {
-    // saving error
-  }
-};
-
-const removeToken = async () => {
-  try {
-    await AsyncStorage.removeItem(STORAGE_NAMES.TOKEN);
-  } catch (e) {
-    // saving error
-  }
-};
 
 export default AuthContextProvider;

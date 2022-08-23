@@ -1,14 +1,14 @@
 import React, {useContext} from 'react';
 import {View, Image, ImageBackground, StyleSheet} from 'react-native';
-import {login} from '../api/AuthService';
-import {Alert} from '../common/services/Alert';
 
 import Loading from '../common/services/Loading';
 import FormLogin from '../components/form-login/FormLogin';
 import {COLORS} from '../Config';
 import {AuthContext} from '../store/auth-context';
+import {login} from '../api/AuthService';
+import {Alert} from '../common/services/Alert';
 
-function Login() {
+function LoginScreen() {
   const authCtx = useContext(AuthContext);
 
   async function onAuthenticateHandler({email, password}) {
@@ -48,7 +48,7 @@ function Login() {
   );
 }
 
-export default Login;
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   rootContainer: {

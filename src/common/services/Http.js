@@ -18,7 +18,7 @@ http.interceptors.response.use(
   async error => {
     if (error.response && error.response.status === 401) {
       //  && http.defaults.headers.common.Authorization
-      // TODO:: Go to logout
+      //TODO:: Go to logout
       /* store.dispatch(logout()); */
     }
     return Promise.reject(error);
@@ -66,12 +66,12 @@ class Http {
     return http.put(url, data, config).catch(error => this.onError(error, url));
   }
 
-  async get(url, params = null) {
+  async get(url, params = null, config) {
     if (params) {
       const paramsAsQuery = qs.stringify(params); // , { serializeDate: (d) => d.getTime().toString()}
       url = `${url}?${paramsAsQuery}`;
     }
-    return http.get(url).catch(error => this.onError(error, url));
+    return http.get(url, config).catch(error => this.onError(error, url));
   }
 
   async delete(url, params = null) {

@@ -1,20 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import {View, Dimensions, Modal, Text, Animated, Pressable} from 'react-native';
+import {View, Dimensions, Modal, Animated, Pressable} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS} from '../../Config';
 import Button from '../button/Button';
-import styles from './ProductEditModal.style';
-import IconButton from '../icon-button/IconButton';
+import styles from './ProductsModal.style';
 
-function ProductEditModal({
-  currentEditProduct,
+function ProductsModalContainer({
   isVisible,
   onCloseModal,
-  onEdit,
+  onAddPress,
+  children,
 }) {
-  const [currentProduct, setCurrentProduct] = useState({});
-
   const screenHeight = Dimensions.get('screen').height;
 
   const [panY, setPanY] = useState(new Animated.Value(screenHeight));
@@ -54,10 +51,6 @@ function ProductEditModal({
     }
   }, [isVisible, resetPositionAnim, spinValue]);
 
-  useEffect(() => {
-    setCurrentProduct(currentEditProduct);
-  }, [currentEditProduct]);
-
   const closeModal = () => {
     closeAnim.start(() => {
       setPanY(new Animated.Value(screenHeight));
@@ -70,25 +63,7 @@ function ProductEditModal({
     closeAnim.start(() => {
       setPanY(new Animated.Value(screenHeight));
       setSpinValue(new Animated.Value(0));
-      onEdit({
-        productId: currentProduct.productId,
-        quantity: currentProduct.quantity,
-      });
-    });
-  }
-
-  function onUpdateQuantityHandler(action) {
-    let newQuantity =
-      action === 'add'
-        ? currentProduct.quantity + 1
-        : currentProduct.quantity - 1;
-
-    if (newQuantity <= 0) {
-      newQuantity = 0;
-    }
-
-    setCurrentProduct(current => {
-      return {...current, quantity: newQuantity};
+      onAddPress();
     });
   }
 
@@ -102,35 +77,14 @@ function ProductEditModal({
             </Animated.View>
           </Pressable>
           <View style={styles.content}>
-            <Text style={styles.title}>{currentProduct.description}</Text>
+            {children}
 
-            <View style={styles.actionsContainer}>
-              <IconButton
-                icon="add-circle"
-                color={COLORS.green}
-                size={56}
-                buttonStyle={styles.icon}
-                onPress={() => {
-                  onUpdateQuantityHandler('add');
-                }}
-              />
-              <Text style={styles.quantity}>{currentProduct.quantity}</Text>
-              <IconButton
-                icon="remove-circle"
-                color={COLORS.red}
-                size={56}
-                buttonStyle={styles.icon}
-                onPress={() => {
-                  onUpdateQuantityHandler('remove');
-                }}
-              />
-            </View>
             <View style={styles.buttonContainer}>
               <Button
                 onPress={onAddPressHandler}
-                text="ALTERAR"
+                text="ADICIONAR"
                 size="normal"
-                iconName="checkmark-sharp"
+                iconName="add-sharp"
                 position="normal"
               />
             </View>
@@ -141,4 +95,4 @@ function ProductEditModal({
   );
 }
 
-export default ProductEditModal;
+export default ProductsModalContainer;

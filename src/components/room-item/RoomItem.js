@@ -6,7 +6,7 @@ import {useNavigation} from '@react-navigation/native';
 import styles from './RoomItem.style';
 import {COLORS} from '../../Config';
 
-function RoomItem({id, description, availableTables, busyTables}) {
+function RoomItem({id, name, availableTables, busyTables}) {
   const roomColor = busyTables === availableTables ? COLORS.red : COLORS.green;
   const roomIcon = busyTables === availableTables ? 'door-closed' : 'door-open';
   const roomStyle =
@@ -21,7 +21,7 @@ function RoomItem({id, description, availableTables, busyTables}) {
   const navigation = useNavigation();
 
   function onPressHandler() {
-    navigation.navigate('Tables', {roomId: id});
+    navigation.navigate('Tables', {roomId: id, roomName: name});
   }
 
   return (
@@ -34,7 +34,7 @@ function RoomItem({id, description, availableTables, busyTables}) {
             <Icon name={roomIcon} color={roomColor} size={40} />
           </View>
           <View style={styles.content}>
-            <Text style={styles.title}>{description.toUpperCase()}</Text>
+            <Text style={styles.title}>{name.toUpperCase()}</Text>
             <Text
               style={
                 styles.subTitle

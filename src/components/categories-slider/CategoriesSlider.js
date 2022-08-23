@@ -1,19 +1,30 @@
 import React from 'react';
 import {View, FlatList, StyleSheet} from 'react-native';
 
-import {CATEGORIES_DATA} from '../../Config';
 import CategoryItem from './CategoryItem';
 
-function CategoriesSlider({onItemPress}) {
+function CategoriesSlider({categories, onItemPress, currentCategory}) {
   function renderCategory(itemData) {
-    return <CategoryItem {...itemData.item} onPress={onItemPress} />;
+    const imgSource = {
+      uri: 'https://cdn-icons-png.flaticon.com/256/4910/4910014.png',
+    };
+    const isActive = currentCategory === itemData.item.id ? true : false;
+
+    return (
+      <CategoryItem
+        {...itemData.item}
+        imageSource={imgSource}
+        onPress={onItemPress}
+        isActive={isActive}
+      />
+    );
   }
 
   return (
     <View style={styles.categoriesContainer}>
       <FlatList
         keyExtractor={item => item.id.toString()}
-        data={CATEGORIES_DATA}
+        data={categories}
         renderItem={renderCategory}
         horizontal={true}
         showsHorizontalScrollIndicator={false}

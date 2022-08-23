@@ -1,3 +1,5 @@
+/* eslint-env browser */
+/* eslint no-undef: "error"*/
 import React, {useEffect, useState} from 'react';
 import {FlatList, StyleSheet, View, Text} from 'react-native';
 
@@ -5,6 +7,7 @@ import {getRooms} from '../api/RoomsService';
 import {Alert} from '../common/services/Alert';
 import Loading from '../common/services/Loading';
 import RoomItem from '../components/room-item/RoomItem';
+import axios from 'axios';
 
 function renderRoomItem(itemData) {
   return <RoomItem {...itemData.item} />;
@@ -14,23 +17,38 @@ function RoomsScreen() {
   const [rooms, setRooms] = useState([]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function fetchRooms() {
       Loading.start();
       try {
-        const response = await getRooms();
+        const response = await getRooms({
+          signal: controller.signal,
+        });
+
         setRooms(response.rooms);
+
         Loading.stop();
       } catch (error) {
-        Alert.error(
-          'Ocorreu um erro',
-          'Por favor contacte o administrador.\n' +
-            error.response?.data?.message,
-        );
+        if (!axios.isCancel(error)) {
+          Alert.error(
+            'Ocorreu um erro',
+            'Por favor contacte o administrador.\n' +
+              '[' +
+              error.response?.data?.message +
+              ']',
+          );
+        }
         Loading.stop();
       }
     }
 
     fetchRooms();
+
+    return () => {
+      // If the component is unmounted, cancel the request
+      controller.abort();
+    };
   }, []);
 
   function renderEmptyList() {

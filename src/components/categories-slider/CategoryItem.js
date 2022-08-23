@@ -13,20 +13,24 @@ import {COLORS, GENERAL_DIMENSIONS} from '../../Config';
 export const itemWidth = Dimensions.get('window').width / 4.5;
 export const itemHeight = Dimensions.get('window').width / 4.5 + 20;
 
-function CategoryItem({id, description, imageSource, onPress}) {
+function CategoryItem({id, name, imageSource, onPress, isActive}) {
+  let activeStyle = null;
+  if (isActive) {
+    activeStyle = {backgroundColor: COLORS.primary};
+  }
   return (
     <Pressable
       onPress={() => onPress(id)}
       style={({pressed}) =>
         pressed
-          ? [styles.categoryContainer, styles.pressed]
-          : styles.categoryContainer
+          ? [styles.categoryContainer, activeStyle, styles.pressed]
+          : [styles.categoryContainer, activeStyle]
       }>
       <View style={styles.itemImageContainer}>
         <Image source={imageSource} style={styles.itemImage} />
       </View>
       <View style={styles.itemNameContainer}>
-        <Text style={styles.itemName}>{description}</Text>
+        <Text style={styles.itemName}>{name}</Text>
       </View>
     </Pressable>
   );

@@ -7,12 +7,15 @@ import {API_TOKEN_TYPE} from '../Config';
 export const AuthContext = createContext({
   token: '',
   isAuthenticated: false,
+  isLoadingSplash: true,
   authenticate: () => {},
   logout: () => {},
+  stopLoadingSplash: () => {},
 });
 
 function AuthContextProvider({children}) {
   const [authToken, setAuthToken] = useState();
+  const [isLoadingSplash, setIsLoadingSplash] = useState(true);
 
   function authenticate(token) {
     // Set token to State
@@ -37,11 +40,17 @@ function AuthContextProvider({children}) {
     removeToken();
   }
 
+  function stopLoadingSplash() {
+    setIsLoadingSplash(false);
+  }
+
   const value = {
     token: authToken,
     isAuthenticated: !!authToken,
+    isLoadingSplash: isLoadingSplash,
     authenticate: authenticate,
     logout: logout,
+    stopLoadingSplash: stopLoadingSplash,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

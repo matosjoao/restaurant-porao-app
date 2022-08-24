@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
@@ -10,8 +10,6 @@ import SplashScreen from './screens/SplashScreen';
 import {COLORS} from './Config';
 import IconButton from './components/icon-button/IconButton';
 import {AuthContext} from './store/auth-context';
-import {getToken} from './common/services/Storage';
-import {TestStack} from './screens/TestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -88,35 +86,15 @@ function AuthStack() {
 
 function Router() {
   const authCtx = useContext(AuthContext);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function fetchToken() {
-      const storedToken = await getToken();
-      if (storedToken && !isCancelled) {
-        authCtx.authenticate(storedToken);
-      }
-      setIsLoading(false);
-    }
-
-    fetchToken();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
 
   return (
     <NavigationContainer>
-      {isLoading ? (
+      {authCtx.isLoadingSplash ? (
         <SplashScreen />
       ) : (
         <>
-          <TestStack />
-          {/* {!authCtx.isAuthenticated && <AuthStack />}
-          {authCtx.isAuthenticated && <AuthenticatedStack />} */}
+          {!authCtx.isAuthenticated && <AuthStack />}
+          {authCtx.isAuthenticated && <AuthenticatedStack />}
         </>
       )}
     </NavigationContainer>

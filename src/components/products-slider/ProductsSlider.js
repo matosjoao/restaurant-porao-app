@@ -13,10 +13,13 @@ import ProductItem from './ProductItem';
 function ProductsSlider({productsList, onProductListUpdate, isFetching}) {
   const [productsToAdd, setProductsToAdd] = useState([]);
 
+  // On productsToAdd update
   useLayoutEffect(() => {
     // When productsToAdd change update list on main component
     onProductListUpdate(productsToAdd);
-  }, [productsToAdd, onProductListUpdate]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productsToAdd]);
 
   function onProductPressHandler(pressedProduct, action) {
     const updatableProductIndex = productsToAdd.findIndex(
@@ -62,6 +65,7 @@ function ProductsSlider({productsList, onProductListUpdate, isFetching}) {
     }
   }
 
+  // Render Product rom item
   function renderProduct(itemData) {
     const updatableProductIndex = productsToAdd.findIndex(
       product => product.id === itemData.item.id,
@@ -85,6 +89,7 @@ function ProductsSlider({productsList, onProductListUpdate, isFetching}) {
     );
   }
 
+  // Render empty flatlist view
   function renderEmptyList() {
     return (
       <View style={styles.emptyContainer}>

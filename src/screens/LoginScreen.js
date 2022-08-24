@@ -4,18 +4,29 @@ import {View, Image, ImageBackground, StyleSheet} from 'react-native';
 import Loading from '../common/services/Loading';
 import FormLogin from '../components/form-login/FormLogin';
 import {COLORS} from '../Config';
-import {AuthContext} from '../store/auth-context';
 import {login} from '../api/AuthService';
 import {Alert} from '../common/services/Alert';
+import {ProductsContext} from '../store/products-context';
+import {AuthContext} from '../store/auth-context';
 
 function LoginScreen() {
   const authCtx = useContext(AuthContext);
+  const prodCtx = useContext(ProductsContext);
 
   async function onAuthenticateHandler({email, password}) {
     Loading.start();
+
     try {
+      // Login and authenticate with token
       const response = await login(email, password);
       authCtx.authenticate(response.token);
+
+      // Get products data
+      await prodCtx.fetchProducts();
+
+      // Get product types data
+      await prodCtx.fetchProductsTypes();
+
       Loading.stop();
     } catch (error) {
       Alert.error(

@@ -15,6 +15,7 @@ class ErrorBoundary extends PureComponent {
   }
 
   componentDidCatch(error, errorInfo) {
+    //TODO: Improve
     console.log(error);
     //Logger.error(LOGGER_LOG_TYPE.APP_CRASH, 'Application crashed', { error: this.state.error });
     return {hasError: true, error: {error, errorInfo}};

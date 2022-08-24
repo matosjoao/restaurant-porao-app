@@ -42,6 +42,9 @@ export default StyleSheet.create({
     color: COLORS.gray,
     marginBottom: 10,
   },
+  subtitle: {
+    fontSize: 12,
+  },
   buttonContainer: {
     height: 60,
     justifyContent: 'center',

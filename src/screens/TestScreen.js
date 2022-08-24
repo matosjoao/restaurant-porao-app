@@ -2,6 +2,7 @@ import React, {useContext, useEffect} from 'react';
 import {View, StyleSheet, Text, Button} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ProductsContext} from '../store/products-context';
+import SettingsScreen from './SettingsScreen';
 import axios from 'axios';
 
 const Stack = createNativeStackNavigator();
@@ -14,6 +15,7 @@ export function TestStack() {
     <Stack.Navigator>
       <Stack.Screen name="TestScreen1" component={TestScreen1} />
       <Stack.Screen name="TestScreen2" component={TestScreen2} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }
@@ -30,6 +32,12 @@ export function TestScreen1({navigation}) {
           navigation.navigate('TestScreen2');
         }}
       />
+      <Button
+        title="Go Settings"
+        onPress={() => {
+          navigation.navigate('Settings');
+        }}
+      />
     </View>
   );
 }
@@ -39,7 +47,7 @@ export function TestScreen2() {
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  useEffect(() => {
+  /* useEffect(() => {
     const controller = new AbortController();
 
     async function fetchData() {
@@ -67,7 +75,7 @@ export function TestScreen2() {
       // If the component is unmounted, cancel the request
       controller.abort();
     };
-  }, []);
+  }, []); */
 
   return (
     <View style={styles.rootContainer}>

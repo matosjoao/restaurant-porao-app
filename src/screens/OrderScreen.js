@@ -1,7 +1,7 @@
 /* eslint-env browser */
 /* eslint no-undef: "error"*/
-import React, {useCallback, useEffect, useState} from 'react';
-import {StyleSheet, View, FlatList} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, View, FlatList, Alert as AlertReact} from 'react-native';
 import axios from 'axios';
 
 import HeaderTitle from '../components/header-title/HeaderTitle';
@@ -14,9 +14,14 @@ import OrderListEmpty from '../components/order-list/OrderListEmpty';
 import ProductEditModal from '../components/products-modal/ProductEditModal';
 import Loading from '../common/services/Loading';
 import {Alert} from '../common/services/Alert';
-import {getOrder, insertOrder} from '../api/OrderService';
+import {
+  closeOrder,
+  getOrder,
+  insertOrder,
+  updateOrder,
+} from '../api/OrderService';
 
-function OrderScreen({route}) {
+function OrderScreen({route, navigation}) {
   // Get route params
   const roomId = route.params?.roomId;
   const roomName = route.params?.roomName;
@@ -49,7 +54,7 @@ function OrderScreen({route}) {
               id: line.product_id,
               name: line.product_name,
               price: line.product_price,
-              quantity: parseInt(line.quantity),
+              quantity: parseInt(line.quantity, 10),
             };
           });
           setOrderList(orderLines);
@@ -82,12 +87,25 @@ function OrderScreen({route}) {
   function onAddProductsHandler(list) {
     setIsProductsModalVisible(false);
 
-    console.log(list);
+    const productListToUpdate = [...orderList];
+    // For each product to add
+    // Verify if already exist on the orderList
+    // If exist sum quantity
+    // If not push to orderList with orderId null
+    list.forEach(listItem => {
+      const productAlreadyExistIndex = orderList.findIndex(
+        product => product.id === listItem.id,
+      );
+      if (productAlreadyExistIndex === -1) {
+        productListToUpdate.push({...listItem, orderId: null});
+      } else {
+        const updatableProduct = productListToUpdate[productAlreadyExistIndex];
+        updatableProduct.quantity += listItem.quantity;
+        productListToUpdate[productAlreadyExistIndex] = updatableProduct;
+      }
+    });
 
-    //TODO:: Melhorar validar orderId productId e quantity
-    /* setOrderList(currentList => {
-      return [...currentList, ...list];
-    }); */
+    setOrderList(productListToUpdate);
   }
 
   // On edit product quantity
@@ -126,27 +144,41 @@ function OrderScreen({route}) {
     setIsProductEditModalVisible(true);
   }
 
-  // On Submit
+  // On Submit Order
   function onSavePressHandler() {
     if (!roomId || !tableId) {
       Alert.warn('Aviso!', 'Sala ou mesa inválidas para pedido.');
       return;
     }
 
-    //console.log(orderList);
+    if (orderList.length === 0) {
+      Alert.warn('Aviso!', 'Não existe produtos para adicionar ao pedido.');
+      return;
+    }
 
     if (currentOrder) {
-      console.log('UPDATE');
+      onUpdateOrder();
     } else {
-      if (orderList.length === 0) {
-        Alert.warn('Aviso!', 'Não existe produtos para adicionar ao pedido.');
-        return;
-      }
       onInsertOrder();
     }
   }
 
-  const onInsertOrder = useCallback(async () => {
+  // On Close Order
+  function onClosePressHandler() {
+    AlertReact.alert('Aviso!', 'Têm a certeza que pretende fechar o pedido?', [
+      {
+        text: 'Sim',
+        onPress: () => {
+          onCloseOrder();
+        },
+      },
+      {
+        text: 'Não',
+      },
+    ]);
+  }
+
+  const onInsertOrder = async () => {
     const controller = new AbortController();
     Loading.start();
     try {
@@ -167,7 +199,7 @@ function OrderScreen({route}) {
 
         setCurrentOrder(response.order);
 
-        //TODO:: Set up Order Lines
+        //TODO:: Set up Order Lines, missing orderId
       }
       console.log(response);
 
@@ -189,7 +221,95 @@ function OrderScreen({route}) {
       // If the component is unmounted, cancel the request
       controller.abort();
     };
-  }, [orderList, roomId, tableId]);
+  };
+
+  const onUpdateOrder = async () => {
+    const controller = new AbortController();
+    Loading.start();
+    try {
+      const response = await updateOrder(
+        {
+          orderId: currentOrder.id,
+          roomId: roomId,
+          tableId: tableId,
+          products: orderList,
+        },
+        {
+          signal: controller.signal,
+        },
+      );
+
+      if (response.order) {
+        Alert.success(
+          'Sucesso!',
+          response.message
+            ? response.message
+            : 'Operação concluída com sucesso.',
+        );
+      }
+      console.log(response);
+
+      Loading.stop();
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        Alert.error(
+          'Ocorreu um erro',
+          'Por favor contacte o administrador.\n' +
+            '[' +
+            error.response?.data?.message +
+            ']',
+        );
+      }
+      Loading.stop();
+    }
+
+    return () => {
+      // If the component is unmounted, cancel the request
+      controller.abort();
+    };
+  };
+
+  const onCloseOrder = async () => {
+    const controller = new AbortController();
+    Loading.start();
+    try {
+      const response = await closeOrder(
+        {
+          orderId: currentOrder.id,
+          roomId: roomId,
+          tableId: tableId,
+        },
+        {
+          signal: controller.signal,
+        },
+      );
+
+      Alert.success(
+        'Sucesso!',
+        response.message ? response.message : 'Operação concluída com sucesso.',
+      );
+
+      Loading.stop();
+
+      navigation.goBack();
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        Alert.error(
+          'Ocorreu um erro',
+          'Por favor contacte o administrador.\n' +
+            '[' +
+            error.response?.data?.message +
+            ']',
+        );
+      }
+      Loading.stop();
+    }
+
+    return () => {
+      // If the component is unmounted, cancel the request
+      controller.abort();
+    };
+  };
 
   // Render List Item
   function renderProductToAddItem(itemData) {
@@ -259,7 +379,7 @@ function OrderScreen({route}) {
         </View>
         <OrderListFooter
           onPressSave={onSavePressHandler}
-          onPressPrint={() => {}}
+          onPressClose={onClosePressHandler}
         />
       </View>
     </View>

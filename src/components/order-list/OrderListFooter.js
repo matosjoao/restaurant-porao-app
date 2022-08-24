@@ -4,7 +4,7 @@ import {StyleSheet, View} from 'react-native';
 import {COLORS} from '../../Config';
 import Button from '../../components/button/Button';
 
-function OrderListFooter({onPressSave, onPressPrint}) {
+function OrderListFooter({onPressSave, onPressClose}) {
   return (
     <View style={styles.bottomContainer}>
       <Button
@@ -15,10 +15,10 @@ function OrderListFooter({onPressSave, onPressPrint}) {
         position="left-screen"
       />
       <Button
-        onPress={onPressPrint}
-        color="gray"
+        onPress={onPressClose}
+        color="green"
         size="normal"
-        iconName="print"
+        iconName="lock-closed-sharp"
         position="normal"
       />
     </View>

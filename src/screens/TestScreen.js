@@ -1,5 +1,5 @@
 import React, {useContext, useEffect} from 'react';
-import {View, StyleSheet, Text, Button} from 'react-native';
+import {View, StyleSheet, Text, Button, BackHandler} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ProductsContext} from '../store/products-context';
 import SettingsScreen from './SettingsScreen';
@@ -46,6 +46,28 @@ export function TestScreen2() {
   const prodCtx = useContext(ProductsContext);
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  useEffect(() => {
+    const backAction = () => {
+      console.log('Entrou');
+      /* Alert.alert("Hold on!", "Are you sure you want to go back?", [
+        {
+          text: "Cancel",
+          onPress: () => null,
+          style: "cancel"
+        },
+        { text: "YES", onPress: () => BackHandler.exitApp() }
+      ]); */
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   /* useEffect(() => {
     const controller = new AbortController();

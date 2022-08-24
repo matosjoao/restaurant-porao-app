@@ -11,3 +11,7 @@ export async function insertOrder(data, config) {
 export async function updateOrder(data, config) {
   return await Http.put('order', data, config);
 }
+
+export async function closeOrder(data, config) {
+  return await Http.put('close-order', data, config);
+}

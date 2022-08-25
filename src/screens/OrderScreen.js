@@ -199,9 +199,20 @@ function OrderScreen({route, navigation}) {
 
         setCurrentOrder(response.order);
 
-        //TODO:: Set up Order Lines, missing orderId
+        if (response.order.lines) {
+          const newOrderLines = response.order.lines.map(orderLine => {
+            return {
+              id: orderLine.product_id,
+              name: orderLine.product_name,
+              orderId: orderLine.order_id,
+              price: orderLine.product_price,
+              quantity: orderLine.quantity,
+            };
+          });
+
+          setOrderList(newOrderLines);
+        }
       }
-      console.log(response);
 
       Loading.stop();
     } catch (error) {

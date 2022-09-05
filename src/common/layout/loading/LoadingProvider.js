@@ -1,7 +1,38 @@
-import React, {PureComponent} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import EventListener from '../../services/EventListener';
 import LoadingSpinner from './LoadingSpinner';
 
+function LoadingProvider({children}) {
+  const [isLoading, setIsLoading] = useState(false);
+  const isComponentMounted = useRef(false);
+
+  useEffect(() => {
+    isComponentMounted.current = true;
+
+    EventListener.addListener('loading', loading => {
+      if (isComponentMounted.current && isLoading !== loading) {
+        setIsLoading(loading);
+      }
+    });
+
+    return () => {
+      // If the component is unmounted, cancel the request
+      isComponentMounted.current = false;
+    };
+  }, [isLoading]);
+
+  return (
+    <>
+      {children}
+      {isLoading && <LoadingSpinner />}
+    </>
+  );
+}
+
+export default LoadingProvider;
+
+/*
+//TODO:: Remove
 class LoadingProvider extends PureComponent {
   constructor(props) {
     super(props);
@@ -39,3 +70,4 @@ class LoadingProvider extends PureComponent {
 }
 
 export default LoadingProvider;
+*/

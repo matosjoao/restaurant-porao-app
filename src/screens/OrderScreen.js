@@ -1,15 +1,12 @@
 /* eslint-env browser */
 /* eslint no-undef: "error"*/
-import React, {useEffect, useState} from 'react';
-import {StyleSheet, View, FlatList, Alert as AlertReact} from 'react-native';
+import React, {useEffect, useReducer, useRef} from 'react';
+import {FlatList, BackHandler} from 'react-native';
 import axios from 'axios';
 
-import HeaderTitle from '../components/header-title/HeaderTitle';
-import IconButton from '../components/icon-button/IconButton';
-import ProductsModal from '../components/products-modal/ProductsModal';
+import OrderContainer from '../components/order-container/OrderContainer';
 import OrderListItem from '../components/order-list/OrderListItem';
 import OrderListHeader from '../components/order-list/OrderListHeader';
-import OrderListFooter from '../components/order-list/OrderListFooter';
 import OrderListEmpty from '../components/order-list/OrderListEmpty';
 import ProductEditModal from '../components/products-modal/ProductEditModal';
 import Loading from '../common/services/Loading';
@@ -20,6 +17,9 @@ import {
   insertOrder,
   updateOrder,
 } from '../api/OrderService';
+import {orderReducer, INITIAL_STATE} from '../reducers/orderReducer';
+import {ORDER_ACTION_TYPES} from '../actions/orderActionTypes';
+import ProductsModalContainer from '../components/products-modal/ProductsModalContainer';
 
 function OrderScreen({route, navigation}) {
   // Get route params
@@ -29,35 +29,68 @@ function OrderScreen({route, navigation}) {
   const tableName = route.params?.tableName;
 
   // Set states
-  const [currentEditProduct, setCurrentEditProduct] = useState({});
-  const [isProductsModalVisible, setIsProductsModalVisible] = useState(false);
-  const [isProductEditModalVisible, setIsProductEditModalVisible] =
-    useState(false);
-  const [orderList, setOrderList] = useState([]);
-  const [currentOrder, setCurrentOrder] = useState();
+  const [state, dispatch] = useReducer(orderReducer, INITIAL_STATE, initLazy);
+  const updateParent = useRef(false);
+
+  // Init reducer reset
+  function initLazy() {
+    return {
+      orderId: null,
+      orderLines: [],
+      isAddModalVisible: false,
+      isEditModalVisible: false,
+      editProduct: {},
+    };
+  }
+
+  // Register override android back handler
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  const backAction = () => {
+    /* navigation.navigate({
+      name: 'Tables',
+      params: {refresh: true},
+      merge: true,
+    }); */
+    /* console.log(updateParent.current);
+    if (updateParent.current) {
+      console.log('1');
+      // Go back and refresh
+      navigation.navigate({
+        name: 'Tables',
+        params: {refresh: true},
+        merge: true,
+      });
+    } else {
+      console.log('2');
+      navigation.goBack();
+    } */
+    return true;
+  };
 
   // Fetch Current Order
   useEffect(() => {
     const controller = new AbortController();
 
-    async function fetchOrder() {
+    async function fetchOrder(dispatchOrder) {
       Loading.start();
       try {
         const response = await getOrder(roomId, tableId, {
           signal: controller.signal,
         });
+
         if (response.order) {
-          setCurrentOrder(response.order);
-          const orderLines = response.order.lines.map(line => {
-            return {
-              orderId: line.order_id,
-              id: line.product_id,
-              name: line.product_name,
-              price: line.product_price,
-              quantity: parseInt(line.quantity, 10),
-            };
+          dispatchOrder({
+            type: ORDER_ACTION_TYPES.FETCH_ORDER,
+            payload: response.order,
           });
-          setOrderList(orderLines);
         }
 
         Loading.stop();
@@ -75,7 +108,7 @@ function OrderScreen({route, navigation}) {
       }
     }
 
-    fetchOrder();
+    fetchOrder(dispatch);
 
     return () => {
       // If the component is unmounted, cancel the request
@@ -83,65 +116,38 @@ function OrderScreen({route, navigation}) {
     };
   }, [roomId, tableId]);
 
+  // On open/close products add modal
+  function onAddModalHandler(type) {
+    if (type === 'open') {
+      dispatch({type: ORDER_ACTION_TYPES.OPEN_ADD_MODAL});
+    } else if (type === 'close') {
+      dispatch({type: ORDER_ACTION_TYPES.CLOSE_ADD_MODAL});
+    }
+  }
+
+  // On open/close products edit modal
+  function onEditModalHandler(type, product) {
+    if (type === 'open') {
+      dispatch({type: ORDER_ACTION_TYPES.OPEN_EDIT_MODAL, payload: product});
+    } else if (type === 'close') {
+      dispatch({type: ORDER_ACTION_TYPES.CLOSE_EDIT_MODAL});
+    }
+  }
+
   // On add products from modal
-  function onAddProductsHandler(list) {
-    setIsProductsModalVisible(false);
-
-    const productListToUpdate = [...orderList];
-    // For each product to add
-    // Verify if already exist on the orderList
-    // If exist sum quantity
-    // If not push to orderList with orderId null
-    list.forEach(listItem => {
-      const productAlreadyExistIndex = orderList.findIndex(
-        product => product.id === listItem.id,
-      );
-      if (productAlreadyExistIndex === -1) {
-        productListToUpdate.push({...listItem, orderId: null});
-      } else {
-        const updatableProduct = productListToUpdate[productAlreadyExistIndex];
-        updatableProduct.quantity += listItem.quantity;
-        productListToUpdate[productAlreadyExistIndex] = updatableProduct;
-      }
+  function onAddProductsHandler(productList) {
+    dispatch({
+      type: ORDER_ACTION_TYPES.INSERT_ORDER_LINE,
+      payload: productList,
     });
-
-    setOrderList(productListToUpdate);
   }
 
   // On edit product quantity
   function onEditProductPressHandler(editableProduct) {
-    setIsProductEditModalVisible(false);
-
-    const updatableProductIndex = orderList.findIndex(
-      product => product.id === editableProduct.productId,
-    );
-
-    if (updatableProductIndex === -1) {
-      return;
-    } else {
-      // Update quantity existing product
-      if (editableProduct.quantity <= 0) {
-        setOrderList(current =>
-          current.filter(obj => {
-            return obj.id !== editableProduct.productId;
-          }),
-        );
-      } else {
-        const updatableProduct = orderList[updatableProductIndex];
-        updatableProduct.quantity = editableProduct.quantity;
-        const updatedProducts = [...orderList];
-        updatedProducts[updatableProductIndex] = updatableProduct;
-        setOrderList(updatedProducts);
-      }
-    }
-
-    setCurrentEditProduct(false);
-  }
-
-  // On product edit click handler
-  function orderListItemClickHandler(product) {
-    setCurrentEditProduct(product);
-    setIsProductEditModalVisible(true);
+    dispatch({
+      type: ORDER_ACTION_TYPES.UPDATE_ORDER_LINE,
+      payload: editableProduct,
+    });
   }
 
   // On Submit Order
@@ -151,39 +157,28 @@ function OrderScreen({route, navigation}) {
       return;
     }
 
-    if (orderList.length === 0) {
+    if (state.orderLines.length === 0) {
       Alert.warn('Aviso!', 'Não existe produtos para adicionar ao pedido.');
       return;
     }
 
-    if (currentOrder) {
+    // Force to update parent no on go back
+    updateParent.current = true;
+
+    if (state.orderId) {
       onUpdateOrder();
     } else {
       onInsertOrder();
     }
   }
 
-  // On Close Order
-  function onClosePressHandler() {
-    AlertReact.alert('Aviso!', 'Têm a certeza que pretende fechar o pedido?', [
-      {
-        text: 'Sim',
-        onPress: () => {
-          onCloseOrder();
-        },
-      },
-      {
-        text: 'Não',
-      },
-    ]);
-  }
-
+  // Insert new Order
   const onInsertOrder = async () => {
     const controller = new AbortController();
     Loading.start();
     try {
       const response = await insertOrder(
-        {roomId: roomId, tableId: tableId, products: orderList},
+        {roomId: roomId, tableId: tableId, products: state.orderLines},
         {
           signal: controller.signal,
         },
@@ -197,21 +192,10 @@ function OrderScreen({route, navigation}) {
             : 'Operação concluída com sucesso.',
         );
 
-        setCurrentOrder(response.order);
-
-        if (response.order.lines) {
-          const newOrderLines = response.order.lines.map(orderLine => {
-            return {
-              id: orderLine.product_id,
-              name: orderLine.product_name,
-              orderId: orderLine.order_id,
-              price: orderLine.product_price,
-              quantity: orderLine.quantity,
-            };
-          });
-
-          setOrderList(newOrderLines);
-        }
+        dispatch({
+          type: ORDER_ACTION_TYPES.FETCH_ORDER,
+          payload: response.order,
+        });
       }
 
       Loading.stop();
@@ -234,16 +218,17 @@ function OrderScreen({route, navigation}) {
     };
   };
 
+  // Update current Order
   const onUpdateOrder = async () => {
     const controller = new AbortController();
     Loading.start();
     try {
       const response = await updateOrder(
         {
-          orderId: currentOrder.id,
+          orderId: state.orderId,
           roomId: roomId,
           tableId: tableId,
-          products: orderList,
+          products: state.orderLines,
         },
         {
           signal: controller.signal,
@@ -257,8 +242,12 @@ function OrderScreen({route, navigation}) {
             ? response.message
             : 'Operação concluída com sucesso.',
         );
+
+        dispatch({
+          type: ORDER_ACTION_TYPES.FETCH_ORDER,
+          payload: response.order,
+        });
       }
-      console.log(response);
 
       Loading.stop();
     } catch (error) {
@@ -280,13 +269,14 @@ function OrderScreen({route, navigation}) {
     };
   };
 
+  // Close Order
   const onCloseOrder = async () => {
     const controller = new AbortController();
     Loading.start();
     try {
       const response = await closeOrder(
         {
-          orderId: currentOrder.id,
+          orderId: state.orderId,
           roomId: roomId,
           tableId: tableId,
         },
@@ -302,7 +292,12 @@ function OrderScreen({route, navigation}) {
 
       Loading.stop();
 
-      navigation.goBack();
+      // Go back and refresh
+      navigation.navigate({
+        name: 'Tables',
+        params: {refresh: true},
+        merge: true,
+      });
     } catch (error) {
       if (!axios.isCancel(error)) {
         Alert.error(
@@ -326,11 +321,11 @@ function OrderScreen({route, navigation}) {
   function renderProductToAddItem(itemData) {
     return (
       <OrderListItem
-        productId={itemData.item.id}
+        id={itemData.item.id}
         description={itemData.item.name}
         price={itemData.item.price}
         quantity={itemData.item.quantity}
-        onItemPress={orderListItemClickHandler}
+        onItemPress={onEditModalHandler}
       />
     );
   }
@@ -346,71 +341,34 @@ function OrderScreen({route, navigation}) {
   }
 
   return (
-    <View style={styles.container}>
-      <ProductsModal
-        isVisible={isProductsModalVisible}
-        onCloseModal={() => {
-          setIsProductsModalVisible(false);
-        }}
-        onAddProducts={onAddProductsHandler}
+    <>
+      <ProductsModalContainer
+        isVisible={state.isAddModalVisible}
+        onCloseModal={onAddModalHandler.bind(this, 'close')}
+        onAddProductsPress={onAddProductsHandler}
       />
       <ProductEditModal
-        currentEditProduct={currentEditProduct}
-        isVisible={isProductEditModalVisible}
-        onCloseModal={() => {
-          setIsProductEditModalVisible(false);
-        }}
+        currentEditProduct={state.editProduct}
+        isVisible={state.isEditModalVisible}
+        onCloseModal={onEditModalHandler.bind(this, 'close')}
         onEdit={onEditProductPressHandler}
       />
-      <View>
-        <HeaderTitle>
-          {roomName} - {tableName} :
-        </HeaderTitle>
-      </View>
-      <View style={styles.container}>
-        <View style={styles.iconContainer}>
-          <IconButton
-            icon="add-circle"
-            color="green"
-            size={50}
-            onPress={() => {
-              setIsProductsModalVisible(true);
-            }}
-          />
-        </View>
-        <View style={styles.list}>
-          <FlatList
-            data={orderList}
-            renderItem={renderProductToAddItem}
-            keyExtractor={item => `_${item.id}`}
-            ListHeaderComponent={renderListHeader}
-            stickyHeaderIndices={[0]}
-            ListEmptyComponent={renderEmptyList}
-          />
-        </View>
-        <OrderListFooter
-          onPressSave={onSavePressHandler}
-          onPressClose={onClosePressHandler}
+      <OrderContainer
+        title={`${roomName} - ${tableName} :`}
+        onPressOpenModal={onAddModalHandler.bind(this, 'open')}
+        onSavePress={onSavePressHandler}
+        onClosePress={onCloseOrder}>
+        <FlatList
+          data={state.orderLines}
+          renderItem={renderProductToAddItem}
+          keyExtractor={item => item.id}
+          ListHeaderComponent={renderListHeader}
+          stickyHeaderIndices={[0]}
+          ListEmptyComponent={renderEmptyList}
         />
-      </View>
-    </View>
+      </OrderContainer>
+    </>
   );
 }
 
 export default OrderScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  iconContainer: {
-    alignItems: 'flex-end',
-    marginHorizontal: 20,
-  },
-  list: {
-    flex: 1,
-    marginHorizontal: 10,
-    paddingTop: 10,
-  },
-});

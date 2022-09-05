@@ -13,10 +13,10 @@ function ProductEditModal({
   onCloseModal,
   onEdit,
 }) {
-  const [currentProduct, setCurrentProduct] = useState({});
-
   const screenHeight = Dimensions.get('screen').height;
 
+  // Set states
+  const [currentProduct, setCurrentProduct] = useState({});
   const [panY, setPanY] = useState(new Animated.Value(screenHeight));
   const [spinValue, setSpinValue] = useState(new Animated.Value(0));
 
@@ -52,7 +52,8 @@ function ProductEditModal({
 
       resetPositionAnim.start();
     }
-  }, [isVisible, resetPositionAnim, spinValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
 
   useEffect(() => {
     setCurrentProduct(currentEditProduct);
@@ -71,7 +72,7 @@ function ProductEditModal({
       setPanY(new Animated.Value(screenHeight));
       setSpinValue(new Animated.Value(0));
       onEdit({
-        productId: currentProduct.productId,
+        id: currentProduct.id,
         quantity: currentProduct.quantity,
       });
     });
@@ -110,9 +111,7 @@ function ProductEditModal({
                 color={COLORS.green}
                 size={56}
                 buttonStyle={styles.icon}
-                onPress={() => {
-                  onUpdateQuantityHandler('add');
-                }}
+                onPress={onUpdateQuantityHandler.bind(this, 'add')}
               />
               <Text style={styles.quantity}>{currentProduct.quantity}</Text>
               <IconButton
@@ -120,9 +119,7 @@ function ProductEditModal({
                 color={COLORS.red}
                 size={56}
                 buttonStyle={styles.icon}
-                onPress={() => {
-                  onUpdateQuantityHandler('remove');
-                }}
+                onPress={onUpdateQuantityHandler.bind(this, 'remove')}
               />
             </View>
             <View style={styles.buttonContainer}>

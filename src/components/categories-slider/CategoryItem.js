@@ -20,7 +20,7 @@ function CategoryItem({id, name, imageSource, onPress, isActive}) {
   }
   return (
     <Pressable
-      onPress={() => onPress(id)}
+      onPress={onPress.bind(this, id)}
       style={({pressed}) =>
         pressed
           ? [styles.categoryContainer, activeStyle, styles.pressed]

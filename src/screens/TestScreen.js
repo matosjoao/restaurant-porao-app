@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useContext, useEffect, useReducer} from 'react';
 import {View, StyleSheet, Text, Button, BackHandler} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ProductsContext} from '../store/products-context';
@@ -15,10 +15,40 @@ export function TestStack() {
     <Stack.Navigator>
       <Stack.Screen name="TestScreen1" component={TestScreen1} />
       <Stack.Screen name="TestScreen2" component={TestScreen2} />
+      <Stack.Screen name="TestScreen3" component={Counter} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }
+
+const initialState = {count: 0};
+
+// The reducer function
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return {count: state.count + 1};
+    case 'decrement':
+      return {count: state.count - 1};
+    case 'reset':
+      return {count: (state.count = 0)};
+    default:
+      return {count: state.count};
+  }
+}
+
+export const Counter = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  return (
+    <View>
+      <Text>Count: {state.count}</Text>
+      <Button onPress={() => dispatch({type: 'increment'})} title="Increment" />
+      <Button onPress={() => dispatch({type: 'decrement'})} title="Decrement" />
+      <Button onPress={() => dispatch({type: 'reset'})} title="Reset" />
+    </View>
+  );
+};
 
 export function TestScreen1({navigation}) {
   const prodCtx = useContext(ProductsContext);
@@ -36,6 +66,12 @@ export function TestScreen1({navigation}) {
         title="Go Settings"
         onPress={() => {
           navigation.navigate('Settings');
+        }}
+      />
+      <Button
+        title="USErEDUCER tEST"
+        onPress={() => {
+          navigation.navigate('TestScreen3');
         }}
       />
     </View>

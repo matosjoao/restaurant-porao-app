@@ -18,9 +18,7 @@ function ProductItem({id, name, price, quantity, onPressAdd, onPressRemove}) {
           color={COLORS.green}
           size={40}
           buttonStyle={styles.icon}
-          onPress={() => {
-            onPressAdd({id, name, price});
-          }}
+          onPress={onPressAdd.bind(this, {id, name, price})}
         />
         <Text style={styles.quantity}>{quantity}</Text>
         <IconButton
@@ -28,9 +26,7 @@ function ProductItem({id, name, price, quantity, onPressAdd, onPressRemove}) {
           color={COLORS.red}
           size={40}
           buttonStyle={styles.icon}
-          onPress={() => {
-            onPressRemove({id, name, price});
-          }}
+          onPress={onPressRemove.bind(this, {id, name, price})}
         />
       </View>
     </View>

@@ -3,7 +3,7 @@ import {StyleSheet, View, Text} from 'react-native';
 import {COLORS, ORDER_DIMENSIONS} from '../../Config';
 import IconButton from '../icon-button/IconButton';
 
-function OrderListItem({productId, description, quantity, onItemPress}) {
+function OrderListItem({id, description, quantity, onItemPress}) {
   return (
     <View style={styles.container}>
       <View style={styles.descriptionContainer}>
@@ -16,9 +16,11 @@ function OrderListItem({productId, description, quantity, onItemPress}) {
             icon="create-outline"
             color={COLORS.red}
             size={26}
-            onPress={() => {
-              onItemPress({productId, description, quantity});
-            }}
+            onPress={onItemPress.bind(this, 'open', {
+              id,
+              description,
+              quantity,
+            })}
             buttonStyle={styles.icon}
           />
         </View>

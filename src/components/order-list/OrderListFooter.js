@@ -1,21 +1,49 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleSheet, View, Alert} from 'react-native';
 
 import {COLORS} from '../../Config';
 import Button from '../../components/button/Button';
 
 function OrderListFooter({onPressSave, onPressClose}) {
+  function onPressCloseHandler() {
+    Alert.alert('Aviso!', 'Têm a certeza que pretende fechar o pedido?', [
+      {
+        text: 'Sim',
+        onPress: () => {
+          onPressClose();
+        },
+      },
+      {
+        text: 'Não',
+      },
+    ]);
+  }
+
+  function onPressSaveHandler() {
+    Alert.alert('Aviso!', 'Têm a certeza que pretende guardar o pedido?', [
+      {
+        text: 'Sim',
+        onPress: () => {
+          onPressSave();
+        },
+      },
+      {
+        text: 'Não',
+      },
+    ]);
+  }
+
   return (
     <View style={styles.bottomContainer}>
       <Button
-        onPress={onPressSave}
+        onPress={onPressSaveHandler}
         text="GRAVAR"
         size="normal"
         iconName="save"
         position="left-screen"
       />
       <Button
-        onPress={onPressClose}
+        onPress={onPressCloseHandler}
         color="green"
         size="normal"
         iconName="lock-closed-sharp"

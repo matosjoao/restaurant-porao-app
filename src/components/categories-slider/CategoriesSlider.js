@@ -1,9 +1,12 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {View, FlatList, StyleSheet} from 'react-native';
+import {ProductsContext} from '../../store/products-context';
 
 import CategoryItem from './CategoryItem';
 
-function CategoriesSlider({categories, onItemPress, currentCategory}) {
+function CategoriesSlider({onItemPress, currentCategory}) {
+  const prodCtx = useContext(ProductsContext);
+
   function renderCategory(itemData) {
     const imgSource = {
       uri: 'https://cdn-icons-png.flaticon.com/256/4910/4910014.png',
@@ -23,8 +26,8 @@ function CategoriesSlider({categories, onItemPress, currentCategory}) {
   return (
     <View style={styles.categoriesContainer}>
       <FlatList
-        keyExtractor={item => item.id.toString()}
-        data={categories}
+        keyExtractor={item => item.id}
+        data={prodCtx.productsTypes}
         renderItem={renderCategory}
         horizontal={true}
         showsHorizontalScrollIndicator={false}

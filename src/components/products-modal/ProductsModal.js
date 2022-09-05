@@ -1,106 +1,151 @@
-import React, {useContext, useState} from 'react';
-import {Text, View} from 'react-native';
+import React, {useContext, useReducer} from 'react';
+import {Text, View, FlatList} from 'react-native';
 
 import CategoriesSlider from '../categories-slider/CategoriesSlider';
-import ProductsSlider from '../products-slider/ProductsSlider';
 import SearchInput from '../search-input/SearchInput';
 import styles from './ProductsModal.style';
-import ProductsModalContainer from './ProductsModalContainer';
+import Button from '../button/Button';
 import {ProductsContext} from '../../store/products-context';
+import ProductItem from '../products-slider/ProductItem';
+import {INITIAL_STATE, productReducer} from '../../reducers/productReducer';
+import {PRODUCT_ACTION_TYPES} from '../../actions/productActionTypes';
 
-function ProductsModal({isVisible, onCloseModal, onAddProducts}) {
+function ProductsModal({onAddProducts}) {
   const prodCtx = useContext(ProductsContext);
-  const categoriesList = prodCtx.productsTypes;
 
-  const [currentCategory, setCurrentCategory] = useState(null);
-  const [enteredSearch, setEnteredSearch] = useState('');
-  const [productsList, setProductsList] = useState(prodCtx.products);
-  const [isFetching, setIsFetching] = useState(false);
-  const [productsToAdd, setProductsToAdd] = useState([]);
+  // Set states
+  const [state, dispatch] = useReducer(productReducer, INITIAL_STATE, init);
+
+  // Lazy init for reducer
+  function init() {
+    return {
+      category: null,
+      search: '',
+      products: prodCtx.products,
+      filteredProducts: prodCtx.products,
+      productsToAdd: [],
+    };
+  }
 
   // On Category press filter
   function onCategoryPressHandler(categoryId) {
-    //TODO:: Validate if this is the way to go for the search
-    if (categoryId === currentCategory) {
-      setProductsList(prodCtx.products);
-      setCurrentCategory(null);
-    } else {
-      setCurrentCategory(categoryId);
-      setIsFetching(true);
-      let filteredProductList = prodCtx.products.filter(product => {
-        return product.product_type_id === categoryId;
-      });
-      setProductsList(filteredProductList);
-      setIsFetching(false);
-    }
+    dispatch({
+      type: PRODUCT_ACTION_TYPES.PRODUCT_UPDATE_CATEGORY,
+      payload: categoryId,
+    });
   }
 
   // On Search submit
   function onSearchSubmitHandler() {
-    //TODO:: Validate if this is the way to go for the search
-    let filteredProductList = prodCtx.products;
-    if (enteredSearch === '') {
-      if (currentCategory != null) {
-        filteredProductList = productsList.filter(product => {
-          return product.product_type_id === currentCategory;
-        });
-      }
-    } else {
-      filteredProductList = productsList.filter(product => {
-        return product.name.toLowerCase().includes(enteredSearch.toLowerCase());
-      });
-    }
-
-    setProductsList(filteredProductList);
+    dispatch({
+      type: PRODUCT_ACTION_TYPES.PRODUCT_SEARCH,
+    });
   }
 
-  // On Update list: quantities
-  function onProductListUpdateHandler(list) {
-    setProductsToAdd(list);
+  // On search input change handler
+  function onSearchChangeHandler(value) {
+    dispatch({
+      type: PRODUCT_ACTION_TYPES.PRODUCT_UPDATE_SEARCH,
+      payload: value,
+    });
+  }
+
+  // On Press Add Quantity
+  function onPressAddHandler(product) {
+    dispatch({
+      type: PRODUCT_ACTION_TYPES.PRODUCT_ADD_QUANTITY,
+      payload: product,
+    });
+  }
+
+  // On Press Remove Quantity
+  function onPressRemoveHandler(product) {
+    dispatch({
+      type: PRODUCT_ACTION_TYPES.PRODUCT_SUBTRACT_QUANTITY,
+      payload: product,
+    });
+  }
+
+  // Render Product rom item
+  function renderProduct(itemData) {
+    const productsToAdd = state.productsToAdd;
+    const updatableProductIndex = productsToAdd.findIndex(
+      product => product.id === itemData.item.id,
+    );
+    const quantity =
+      updatableProductIndex !== -1
+        ? productsToAdd[updatableProductIndex].quantity
+        : 0;
+
+    return (
+      <ProductItem
+        {...itemData.item}
+        quantity={quantity}
+        onPressAdd={onPressAddHandler}
+        onPressRemove={onPressRemoveHandler}
+      />
+    );
+  }
+
+  // Render empty flatlist view
+  function renderProductEmptyList() {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.text}>Sem produtos</Text>
+      </View>
+    );
   }
 
   // Add Products to Order List
   function onAddPressHandler() {
-    onAddProducts(productsToAdd);
+    onAddProducts(state.productsToAdd);
   }
 
   return (
-    <ProductsModalContainer
-      isVisible={isVisible}
-      onCloseModal={onCloseModal}
-      onAddPress={onAddPressHandler}>
-      <View style={styles.listContainer}>
-        <Text style={styles.title}>Categorias:</Text>
-        <CategoriesSlider
-          categories={categoriesList}
-          onItemPress={onCategoryPressHandler}
-          currentCategory={currentCategory}
-        />
+    <View style={styles.listContainer}>
+      <Text style={styles.title}>Categorias:</Text>
+      <CategoriesSlider
+        onItemPress={onCategoryPressHandler}
+        currentCategory={state.category}
+      />
 
-        <Text style={styles.title}>
-          Produtos: <Text style={styles.subtitle}>({productsList.length})</Text>
-        </Text>
-        <ProductsSlider
-          productsList={productsList}
-          onProductListUpdate={onProductListUpdateHandler}
-          isFetching={isFetching}
-        />
-
-        {/* TODO:: Add keyboard avoind view */}
-        <SearchInput
-          iconName="search"
-          textInputConfig={{
-            placeholder: 'Procure por um produto...',
-            autoCorrect: false,
-            autoCapitalize: 'none',
-            onChangeText: value => setEnteredSearch(value),
-            value: enteredSearch,
-            returnKeyType: 'search',
-            onSubmitEditing: onSearchSubmitHandler,
-          }}
+      <Text style={styles.title}>
+        Produtos:
+        <Text style={styles.subtitle}>({state.filteredProducts.length})</Text>
+      </Text>
+      <View style={styles.productsContainer}>
+        <FlatList
+          keyExtractor={item => item.id}
+          data={state.filteredProducts}
+          renderItem={renderProduct}
+          ListEmptyComponent={renderProductEmptyList}
         />
       </View>
-    </ProductsModalContainer>
+
+      {/* TODO:: Add keyboard avoind view */}
+      <SearchInput
+        iconName="search"
+        textInputConfig={{
+          placeholder: 'Procure por um produto...',
+          autoCorrect: false,
+          autoCapitalize: 'none',
+          onChangeText: onSearchChangeHandler,
+          value: state.search,
+          returnKeyType: 'search',
+          onSubmitEditing: onSearchSubmitHandler,
+        }}
+      />
+
+      <View style={styles.buttonContainer}>
+        <Button
+          onPress={onAddPressHandler}
+          text="ADICIONAR"
+          size="normal"
+          iconName="add-sharp"
+          position="normal"
+        />
+      </View>
+    </View>
   );
 }
 

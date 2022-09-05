@@ -52,4 +52,16 @@ export default StyleSheet.create({
   listContainer: {
     flex: 1,
   },
+  productsContainer: {
+    flex: 1,
+    marginBottom: 10,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+  },
+  text: {
+    fontFamily: 'Roboto-Light',
+    fontSize: 14,
+    paddingVertical: 10,
+  },
 });

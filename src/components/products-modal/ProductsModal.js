@@ -1,17 +1,17 @@
-import React, {useContext, useReducer} from 'react';
+import React, {useReducer} from 'react';
 import {Text, View, FlatList} from 'react-native';
 
 import CategoriesSlider from '../categories-slider/CategoriesSlider';
 import SearchInput from '../search-input/SearchInput';
 import styles from './ProductsModal.style';
 import Button from '../button/Button';
-import {ProductsContext} from '../../store/products-context';
 import ProductItem from '../products-slider/ProductItem';
 import {INITIAL_STATE, productReducer} from '../../reducers/productReducer';
 import {PRODUCT_ACTION_TYPES} from '../../actions/productActionTypes';
+import useProducts from '../../common/hooks/useProducts';
 
 function ProductsModal({onAddProducts}) {
-  const prodCtx = useContext(ProductsContext);
+  const {products} = useProducts();
 
   // Set states
   const [state, dispatch] = useReducer(productReducer, INITIAL_STATE, init);
@@ -21,8 +21,8 @@ function ProductsModal({onAddProducts}) {
     return {
       category: null,
       search: '',
-      products: prodCtx.products,
-      filteredProducts: prodCtx.products,
+      products: products,
+      filteredProducts: products,
       productsToAdd: [],
     };
   }

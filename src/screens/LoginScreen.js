@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React from 'react';
 import {View, Image, ImageBackground, StyleSheet} from 'react-native';
 
 import Loading from '../common/services/Loading';
@@ -6,12 +6,12 @@ import FormLogin from '../components/form-login/FormLogin';
 import {COLORS} from '../Config';
 import {login} from '../api/AuthService';
 import {Alert} from '../common/services/Alert';
-import {ProductsContext} from '../store/products-context';
-import {AuthContext} from '../store/auth-context';
+import useAuth from '../common/hooks/useAuth';
+import useProducts from '../common/hooks/useProducts';
 
 function LoginScreen() {
-  const authCtx = useContext(AuthContext);
-  const prodCtx = useContext(ProductsContext);
+  const {authenticate} = useAuth();
+  const {fetchProducts, fetchProductsTypes} = useProducts();
 
   async function onAuthenticateHandler({email, password}) {
     Loading.start();
@@ -19,13 +19,13 @@ function LoginScreen() {
     try {
       // Login and authenticate with token
       const response = await login(email, password);
-      authCtx.authenticate(response.token);
+      authenticate(response.token);
 
       // Get products data
-      await prodCtx.fetchProducts();
+      await fetchProducts();
 
       // Get product types data
-      await prodCtx.fetchProductsTypes();
+      await fetchProductsTypes();
 
       Loading.stop();
     } catch (error) {

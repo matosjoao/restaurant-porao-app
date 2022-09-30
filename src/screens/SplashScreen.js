@@ -1,18 +1,18 @@
 /* eslint-env browser */
 /* eslint no-undef: "error"*/
 import axios from 'axios';
-import React, {useContext, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {View, Image, StyleSheet, ActivityIndicator} from 'react-native';
 
 import {getToken} from '../common/services/Storage';
 import {COLORS} from '../Config';
 import {Alert} from '../common/services/Alert';
-import {AuthContext} from '../store/auth-context';
-import {ProductsContext} from '../store/products-context';
+import useAuth from '../common/hooks/useAuth';
+import useProducts from '../common/hooks/useProducts';
 
 function SplashScreen() {
-  const authCtx = useContext(AuthContext);
-  const prodCtx = useContext(ProductsContext);
+  const {authenticate, stopLoadingSplash} = useAuth();
+  const {fetchProducts, fetchProductsTypes} = useProducts();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -22,21 +22,21 @@ function SplashScreen() {
         const storedToken = await getToken();
         if (storedToken) {
           // Authenticate with token
-          authCtx.authenticate(storedToken);
+          authenticate(storedToken);
 
           // Get products data
-          await prodCtx.fetchProducts({
+          await fetchProducts({
             signal: controller.signal,
           });
 
           // Get product types data
-          await prodCtx.fetchProductsTypes({
+          await fetchProductsTypes({
             signal: controller.signal,
           });
         }
 
         // Stop loading splash
-        authCtx.stopLoadingSplash();
+        stopLoadingSplash();
       } catch (error) {
         if (!axios.isCancel(error)) {
           Alert.error(

@@ -1,12 +1,12 @@
-import React, {useContext} from 'react';
+import React from 'react';
 import {StyleSheet, View} from 'react-native';
+import useAuth from '../common/hooks/useAuth';
 
 import IconButton from '../components/icon-button/IconButton';
 import {COLORS} from '../Config';
-import {AuthContext} from '../store/auth-context';
 
 function SettingsScreen() {
-  const authCtx = useContext(AuthContext);
+  const {logout} = useAuth();
 
   return (
     <View style={styles.container}>
@@ -15,7 +15,7 @@ function SettingsScreen() {
         color={COLORS.primary}
         size={50}
         onPress={() => {
-          authCtx.logout();
+          logout();
         }}
       />
     </View>

@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
@@ -9,7 +9,7 @@ import LoginScreen from './screens/LoginScreen';
 import SplashScreen from './screens/SplashScreen';
 import {COLORS} from './Config';
 import IconButton from './components/icon-button/IconButton';
-import {AuthContext} from './store/auth-context';
+import useAuth from './common/hooks/useAuth';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,16 +85,16 @@ function AuthStack() {
 }
 
 function Router() {
-  const authCtx = useContext(AuthContext);
+  const {isLoadingSplash, isAuthenticated} = useAuth();
 
   return (
     <NavigationContainer>
-      {authCtx.isLoadingSplash ? (
+      {isLoadingSplash ? (
         <SplashScreen />
       ) : (
         <>
-          {!authCtx.isAuthenticated && <AuthStack />}
-          {authCtx.isAuthenticated && <AuthenticatedStack />}
+          {!isAuthenticated && <AuthStack />}
+          {isAuthenticated && <AuthenticatedStack />}
         </>
       )}
     </NavigationContainer>

@@ -1,7 +1,9 @@
 import React, {PureComponent} from 'react';
 import {Text, View, StyleSheet} from 'react-native';
-/* import {LOGGER_LOG_TYPE} from '../../../Config';
-import Logger from '../../services/Logger'; */
+
+import Icon from 'react-native-vector-icons/Ionicons';
+import {COLORS} from '../../../Config';
+//import Logger from '../../services/Logger';
 
 class ErrorBoundary extends PureComponent {
   constructor(props) {
@@ -16,7 +18,6 @@ class ErrorBoundary extends PureComponent {
 
   componentDidCatch(error, errorInfo) {
     //TODO: Improve
-    console.log(error);
     //Logger.error(LOGGER_LOG_TYPE.APP_CRASH, 'Application crashed', { error: this.state.error });
     return {hasError: true, error: {error, errorInfo}};
   }
@@ -26,9 +27,11 @@ class ErrorBoundary extends PureComponent {
       // You can render any custom fallback UI
       return (
         <View style={styles.container}>
-          {/* <Icon name="times" style={styles.icon} /> */}
-          <Text style={styles.oops}>erro</Text>
-          <Text style={styles.title}>desc</Text>
+          <Icon name="close-circle" style={styles.icon} />
+          <Text style={styles.oops}>Ooops</Text>
+          <Text style={styles.title}>
+            Erro interno, por favor contacte o administrador
+          </Text>
         </View>
       );
     }
@@ -44,25 +47,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#cc3132', // '#cc3132',
-    //padding: vw(5),
+    backgroundColor: '#cc3132',
+    padding: 50,
   },
   icon: {
-    color: '#fff',
+    color: COLORS.white,
     marginBottom: 10,
     fontSize: 99,
   },
   oops: {
+    fontFamily: 'Roboto-Bold',
     fontSize: 28,
-    color: '#fff',
-    fontWeight: 'bold',
+    color: COLORS.white,
     marginBottom: 10,
     textAlign: 'center',
   },
   title: {
+    fontFamily: 'Roboto-Light',
     fontSize: 22,
-    color: '#fff',
-    fontWeight: 'bold',
+    color: COLORS.white,
     marginBottom: 10,
     textAlign: 'center',
   },

@@ -1,3 +1,5 @@
+import Config from 'react-native-config';
+
 /**
  * Colors
  */
@@ -29,8 +31,8 @@ export const LOGIN_DIMENSIONS = {
 /**
  * API
  */
-export const BASE_URL = 'http://192.168.1.69:8000/';
-export const API_BASE_URL = BASE_URL + 'api/';
+export const BASE_URL = Config.BASE_URL;
+export const API_BASE_URL = BASE_URL + '/api/';
 export const API_TOKEN_TYPE = 'Bearer';
 
 /**
